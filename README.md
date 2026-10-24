@@ -30,5 +30,6 @@ release keeps copies of the packages Starboard pins:
 ## Licensing
 
 Each component keeps its own licence, given above and in its directory's
-README. The scripts and READMEs in this repo are GPL-3.0-or-later, like
-Starboard.
+README. This repo's own files (the build scripts, patches, workflows and
+READMEs) are GPL-2.0-or-later: see `LICENSE`. The patches modify proot, which is
+GPL-2.0-or-later, and the build scripts ship inside proot's source tarball.

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Builds libproot.so and libproot_loader.so from Termux's proot plus patches/, with
 # Termux's package options. Writes them, SHA256SUMS and the source tarball to <out-dir>.
 # Usage: NDK=<Android NDK r28c> proot/build.sh <out-dir>
