@@ -31,12 +31,13 @@ curl -fsSL --retry 3 -o /build/mesa.tar.xz "$MESA_URL"
 echo "$MESA_SHA256  /build/mesa.tar.xz" | sha256sum -c --quiet -
 tar -C /build -xJf /build/mesa.tar.xz
 
-# softpipe gives SDL's offscreen driver the EGL device it looks for. The commas are
-# meson's list syntax.
+# softpipe gives SDL's offscreen driver the EGL device it looks for. msm keeps libdrm,
+# which Mesa drops for Turnip on KGSL alone, though virgl's DRM winsys needs it. The
+# commas are meson's list syntax.
 # shellcheck disable=SC2054
 MESON_OPTS=(
     "--prefix=$PREFIX" --libdir=lib --buildtype=release -Db_ndebug=true --wrap-mode=nodownload
-    -Dgallium-drivers=virgl,zink,softpipe -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl
+    -Dgallium-drivers=virgl,zink,softpipe -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl,msm
     -Dplatforms= -Degl=enabled -Dglx=disabled -Dglvnd=enabled -Dgbm=disabled
     -Dgles1=enabled -Dgles2=enabled -Dllvm=disabled -Dvalgrind=disabled -Dlibunwind=disabled
     -Dgallium-va=disabled -Dgallium-rusticl=false -Dvideo-codecs= -Dbuild-tests=false
