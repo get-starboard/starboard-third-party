@@ -1,41 +1,8 @@
-The copyright holder for PRoot and CARE is STMicroelectronics, these
-tools are developed in the Compilation Expertise Center by:
-
-Cédric VINCENT <cedric.vincent@st.com>
-        Original author, maintainer.
-
-Rémi DURAFFORT <remi.duraffort@st.com>
-        Improved the -0 feature, many experiments, bug reports, fixes, and articles.
-
-Christophe GUILLON <christophe.guillon@st.com>
-        Improved CARE, plugin experiments, bug reports, and fixes.
-
-Yves JANIN <yves.janin@st.com>
-        Support for the i386 architecture, many experiments and bug reports.
-
-Antoine MOYNAULT <antoine.moynault@st.com>
-        Many experiments and bug reports.
-
-Claire ROBINE <claire.robine@st.com>
-        Many bug fixes.
-
-Clément BAZIN <clement@bazin-fr.org>
-        Plugins interface, dependency tracker plugin, and bug reports.
-
-Christian BERTIN <christian.bertin@st.com>
-        Valuable support.
-
-Denis FERRANTI <denis.ferranti@st.com>
-        Valuable support.
-
-Paul GHALEB <paul.ghaleb@st.com>
-        User manual review.
-
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
  Copyright (C) 1989, 1991 Free Software Foundation, Inc.,
- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ <https://fsf.org/>
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
@@ -337,8 +304,7 @@ the "copyright" line and a pointer to where the full notice is found.
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    with this program; if not, see <https://www.gnu.org/licenses/>.
 
 Also add information on how to contact you by electronic and paper mail.
 
@@ -362,8 +328,8 @@ necessary.  Here is a sample; alter the names:
   Yoyodyne, Inc., hereby disclaims all copyright interest in the program
   `Gnomovision' (which makes passes at compilers) written by James Hacker.
 
-  <signature of Ty Coon>, 1 April 1989
-  Ty Coon, President of Vice
+  <signature of Moe Ghoul>, 1 April 1989
+  Moe Ghoul, President of Vice
 
 This General Public License does not permit incorporating your program into
 proprietary programs.  If your program is a subroutine library, you may
