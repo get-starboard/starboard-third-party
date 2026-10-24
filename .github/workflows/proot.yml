@@ -20,9 +20,7 @@ jobs:
       matrix:
         run: [a, b]
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install the NDK and patchelf
         run: |
@@ -32,9 +30,11 @@ jobs:
           echo "NDK=$ANDROID_HOME/ndk/$NDK_REVISION" >> "$GITHUB_ENV"
 
       - name: Build
-        run: proot/build.sh out
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/proot-* ]]; then export PROOT_VERSION=${GITHUB_REF_NAME#proot-}; fi
+          proot/build.sh out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: proot-${{ matrix.run }}
           path: out/
@@ -43,7 +43,7 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
       - name: Both builds are identical
         run: diff proot-a/SHA256SUMS proot-b/SHA256SUMS && cat proot-a/SHA256SUMS
 
@@ -54,7 +54,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: proot-a
           path: out

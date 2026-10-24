@@ -30,12 +30,17 @@ the patches applied, and this directory.
 NDK=/path/to/android-ndk-r28c proot/build.sh out
 ```
 
-Needs `git`, `curl`, `patchelf`, `xz` and the NDK revision in `deps.env`. It
+Needs `git`, `curl`, `ar`, `make`, `patchelf`, `xz` and the NDK revision in
+`deps.env`. It
 clones upstream at the pinned commit, applies the patches, fetches Termux's
 talloc and shmem packages and checks their SHA-256s, then builds with Termux's
 package options. It writes `libproot.so`, `libproot_loader.so`, the source
 tarball and `SHA256SUMS` to `out`. The same inputs give the same hashes on any
 machine.
+
+To build from a release's source tarball offline, unpack it and run its
+`starboard/build.sh` with `PROOT_SRC` set to the unpacked tree. It still
+downloads the talloc and shmem packages.
 
 ## Moving to a new upstream tag
 

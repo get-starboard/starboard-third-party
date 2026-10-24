@@ -3,7 +3,9 @@
 # Builds libproot.so and libproot_loader.so from Termux's proot plus patches/, with
 # Termux's package options. Writes them, SHA256SUMS and the source tarball to <out-dir>.
 # Usage: NDK=<Android NDK r28c> proot/build.sh <out-dir>
+# PROOT_SRC=<dir> builds an already-patched tree, such as a release's source tarball.
 set -euo pipefail
+[[ $# -eq 1 ]] || { echo "usage: NDK=<ndk> $0 <out-dir>" >&2; exit 1; }
 HERE=$(cd "$(dirname "$0")" && pwd)
 OUT=$(mkdir -p "$1" && cd "$1" && pwd)
 : "${NDK:?set NDK to the Android NDK root}"
@@ -13,14 +15,10 @@ grep -q "^Pkg.Revision = $NDK_REVISION\$" "$NDK/source.properties" \
     || { echo "NDK must be $NDK_REVISION" >&2; exit 1; }
 TC=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
 
-# A proot-*-sb* tag gives the release version; anything else is marked -dev.
-if [[ -z "${PROOT_VERSION:-}" ]]; then
-    if tag=$(git -C "$HERE" describe --tags --exact-match --match 'proot-*-sb*' 2>/dev/null); then
-        PROOT_VERSION=${tag#proot-}
-    else
-        PROOT_VERSION="${PROOT_UPSTREAM_TAG#v}-sb-dev"
-    fi
-fi
+# CI passes the release version from the tag; anything else is marked -dev.
+PROOT_VERSION=${PROOT_VERSION:-${PROOT_UPSTREAM_TAG#v}-sb-dev}
+[[ "${PROOT_VERSION%-sb*}" == "${PROOT_UPSTREAM_TAG#v}" ]] \
+    || { echo "version $PROOT_VERSION doesn't match $PROOT_UPSTREAM_TAG in deps.env" >&2; exit 1; }
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -40,16 +38,22 @@ patchelf --set-soname libtalloc2.so "$WORK/deps/usr/lib/libtalloc.so.2.4.3"
 # Upstream at the pinned commit, plus our patches. A fixed path and -ffile-prefix-map
 # keep the build reproducible.
 SRCNAME=proot-$PROOT_VERSION
-git clone -q "$PROOT_REPO" "$WORK/$SRCNAME"
-git -C "$WORK/$SRCNAME" checkout -q "$PROOT_UPSTREAM_COMMIT"
-git -C "$WORK/$SRCNAME" apply "$HERE"/patches/*.patch
-rm -rf "$WORK/$SRCNAME/.git"
-mkdir -p "$WORK/$SRCNAME/starboard"
-cp -r "$HERE/build.sh" "$HERE/deps.env" "$HERE/patches" "$HERE/README.md" "$WORK/$SRCNAME/starboard/"
+if [[ -n "${PROOT_SRC:-}" ]]; then
+    cp -r "$PROOT_SRC" "$WORK/$SRCNAME"
+else
+    git clone -q "$PROOT_REPO" "$WORK/$SRCNAME"
+    [[ "$(git -C "$WORK/$SRCNAME" rev-parse "$PROOT_UPSTREAM_TAG^{commit}")" == "$PROOT_UPSTREAM_COMMIT" ]] \
+        || { echo "$PROOT_UPSTREAM_TAG is no longer $PROOT_UPSTREAM_COMMIT" >&2; exit 1; }
+    git -C "$WORK/$SRCNAME" checkout -q "$PROOT_UPSTREAM_COMMIT"
+    git -C "$WORK/$SRCNAME" apply "$HERE"/patches/*.patch
+    rm -rf "$WORK/$SRCNAME/.git"
+    mkdir -p "$WORK/$SRCNAME/starboard"
+    cp -r "$HERE/build.sh" "$HERE/deps.env" "$HERE/patches" "$HERE/README.md" "$WORK/$SRCNAME/starboard/"
+fi
 
-# The source of these binaries, released beside them.
-tar -C "$WORK" --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf - "$SRCNAME" \
-    | xz -9 -T1 > "$OUT/$SRCNAME-source.tar.xz"
+# The source of these binaries, released beside them. Fixed metadata keeps it reproducible.
+tar -C "$WORK" --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --mode='u=rwX,go=rX' \
+    -cf - "$SRCNAME" | xz -9 -T1 > "$OUT/$SRCNAME-source.tar.xz"
 
 mkdir -p "$WORK/build" "$WORK/bin"
 cp -r "$WORK/$SRCNAME/." "$WORK/build/"
