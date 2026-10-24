@@ -16,6 +16,9 @@ SB_VERSION=${SB_VERSION:-$MESA_VERSION-sb-dev}
     || { echo "version $SB_VERSION doesn't match MESA_VERSION $MESA_VERSION" >&2; exit 1; }
 
 export DEBIAN_FRONTEND=noninteractive
+rm -f /etc/apt/sources.list.d/debian.sources
+echo "deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/$APT_SNAPSHOT trixie main" \
+    > /etc/apt/sources.list
 apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
     build-essential meson ninja-build pkg-config python3-mako python3-yaml python3-packaging \
@@ -72,11 +75,13 @@ echo "$SB_VERSION" > "$T/VERSION"
     echo "source: $MESA_URL"
     echo "sha256: $MESA_SHA256"
     echo "image: $BUILD_IMAGE"
+    echo "apt snapshot: $APT_SNAPSHOT (packages in BUILD-PACKAGES.txt)"
     echo "compiler: $(cc --version | head -1)"
     echo "meson: $(meson --version)"
     echo "options: ${MESON_OPTS[*]}"
     echo "build script: https://github.com/get-starboard/starboard-third-party/tree/mesa-$SB_VERSION/mesa"
 } > "$T/SOURCE.txt"
+dpkg-query -W -f='${Package} ${Version}\n' > "$T/BUILD-PACKAGES.txt"
 
 NAME=mesa-$SB_VERSION-aarch64.tar.xz
 tar -C "$STAGE" --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --mode='u=rwX,go=rX' \

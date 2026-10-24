@@ -37,8 +37,13 @@ twice and checks the tarballs match. A tag also publishes the tarball and
 ## Moving to a new Mesa
 
 Update `MESA_VERSION`, `MESA_URL` and `MESA_SHA256` in `deps.env` (the SHA-256
-is in Mesa's release notes), push, let CI pass, test on a device, then tag
+is in Mesa's release notes), and move `APT_SNAPSHOT` to a recent date if newer
+build tools are needed. Push, let CI pass, test on a device, then tag
 `mesa-<version>-sb1`.
+
+The build tools come from the Debian snapshot in `APT_SNAPSHOT`, not the live
+archive, so rebuilding a tag later gives the same tarball. `BUILD-PACKAGES.txt`
+in the tarball lists their versions.
 
 ## Licence
 
