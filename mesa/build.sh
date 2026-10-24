@@ -22,7 +22,9 @@ apt-get install -y -qq --no-install-recommends \
     bison flex glslang-tools libexpat1-dev zlib1g-dev libzstd-dev libdrm-dev libglvnd-dev \
     libelf-dev ca-certificates curl xz-utils binutils > /dev/null
 
-# A fixed source path keeps the build reproducible.
+# A fixed source path, and a fixed hash seed for Mesa's Python code generators, keep
+# the build reproducible.
+export PYTHONHASHSEED=0
 SRC=/build/mesa-$MESA_VERSION
 PREFIX=/opt/sb-mesa
 STAGE=/build/stage
