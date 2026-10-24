@@ -8,6 +8,7 @@ pinned SHA-256.
 | Directory | What | Built or mirrored | Release tags |
 |---|---|---|---|
 | [`proot/`](proot/) | proot and its loader, with Starboard's patches | Built here | `proot-<version>-sb<n>` |
+| [`mesa/`](mesa/) | Mesa for the GPU paths: virgl, Zink and Turnip | Built here | `mesa-<version>-sb<n>` |
 | none | Termux's libtalloc and libandroid-shmem `.deb`s, which proot needs | Mirrored | `proot-5.1.107.85` |
 
 Tags carry the upstream version, then `-sb<n>`, which counts Starboard's builds

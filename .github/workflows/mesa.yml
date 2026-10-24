@@ -1,0 +1,78 @@
+name: mesa
+
+# Builds twice on arm64 in BUILD_IMAGE and checks the tarballs match. A mesa-*-sb* tag
+# also publishes the tarball on that tag's release.
+on:
+  push:
+    branches: ['**']
+    paths: ['mesa/**', '.github/workflows/mesa.yml']
+    tags: ['mesa-*-sb*']
+  pull_request:
+    paths: ['mesa/**', '.github/workflows/mesa.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        run: [a, b]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Build
+        run: |
+          . mesa/deps.env
+          SB_VERSION=$MESA_VERSION-sb-dev
+          if [[ "$GITHUB_REF" == refs/tags/mesa-* ]]; then SB_VERSION=${GITHUB_REF_NAME#mesa-}; fi
+          mkdir -p out
+          docker run --rm -v "$PWD:/repo:ro" -v "$PWD/out:/out" -e SB_VERSION="$SB_VERSION" \
+            "$BUILD_IMAGE" bash /repo/mesa/build.sh /out
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: mesa-${{ matrix.run }}
+          path: out/
+
+  compare:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - name: Both builds are identical
+        run: diff mesa-a/SHA256SUMS mesa-b/SHA256SUMS && cat mesa-a/SHA256SUMS
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/mesa-')
+    needs: compare
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: mesa-a
+          path: out
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          cd out
+          sha256sum -c SHA256SUMS
+          VERSION=${TAG#mesa-}
+          {
+            echo "Mesa ${VERSION%-sb*} (virgl, Zink and Turnip on KGSL), built for [Starboard](https://get-starboard.app) as $VERSION."
+            echo
+            echo "Built from Mesa's release tarball by [this workflow run]($RUN) with \`mesa/build.sh\` at this tag. \`opt/sb-mesa/SOURCE.txt\` in the tarball lists the source, its SHA-256 and the build options."
+            echo
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+          } > notes.md
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "mesa $VERSION" --notes-file notes.md \
+            "mesa-$VERSION-aarch64.tar.xz" SHA256SUMS
