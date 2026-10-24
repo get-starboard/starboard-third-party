@@ -1,39 +1,34 @@
-# starboard-prebuilts
+# starboard-third-party
 
-A mirror of the third-party native binaries that
-[Starboard](https://github.com/get-starboard/starboard) ships inside its APK.
+Third-party native code that [Starboard](https://github.com/get-starboard/starboard)
+ships, either built here from upstream source or mirrored unchanged. Starboard's
+build downloads each piece from this repo's releases and checks it against a
+pinned SHA-256.
 
-## Why this exists
+| Directory | What | Built or mirrored | Release tags |
+|---|---|---|---|
+| [`proot/`](proot/) | proot and its loader, with Starboard's patches | Built here | `proot-<version>-sb<n>` |
+| none | Termux's libtalloc and libandroid-shmem `.deb`s, which proot needs | Mirrored | `proot-5.1.107.85` |
 
-Starboard runs Linux games on Android via **proot**. proot and its two runtime dependencies are prebuilt for Android
-ARM64 by the [Termux](https://termux.com) project and published to Termux's apt
-pool. That pool is rolling; it keeps only the current version of each package
-and deletes superseded ones. When Termux bumps a version, the old pinned URL
-404s and Starboard's build breaks.
+Tags carry the upstream version, then `-sb<n>`, which counts Starboard's builds
+of that version. A tag on a directory's workflow builds it twice, checks the two
+builds match, and publishes the binaries, `SHA256SUMS` and the source on that
+tag's release.
 
-This repo holds copies of the `.deb`s Starboard pins as GitHub release assets,
-so a build never depends on the Termux pool still having a given version.
-Starboard's build fetches them from here and checks each against a pinned SHA-256.
+## The mirrored packages
 
-The binaries are unmodified Termux packages. Only binaries are mirrored; the
-source stays upstream (linked below).
+Termux's apt pool is rolling: it keeps only the current version of each package
+and deletes the others, so a pinned pool URL eventually 404s. The `proot-5.1.107.85`
+release keeps copies of the packages Starboard pins:
 
-## Contents
-
-Each release tag (e.g. `proot-5.1.107.85`) holds three assets, proot and its
-two runtime dependencies, libtalloc and libandroid-shmem:
-
-| Asset | Version | License | Source | Termux build script |
-|---|---|---|---|---|
-| `proot_*_aarch64.deb` | 5.1.107.x | GPL-2.0 | https://github.com/termux/proot ¹ | [proot/build.sh](https://github.com/termux/termux-packages/blob/master/packages/proot/build.sh) |
-| `libtalloc_*_aarch64.deb` | 2.4.3 | LGPL-3.0 | https://www.samba.org/ftp/talloc/ ² | [libtalloc/build.sh](https://github.com/termux/termux-packages/blob/master/packages/libtalloc/build.sh) |
-| `libandroid-shmem_*_aarch64.deb` | 0.7 | BSD-3-Clause | https://github.com/termux/libandroid-shmem ¹ | [libandroid-shmem/build.sh](https://github.com/termux/termux-packages/blob/master/packages/libandroid-shmem/build.sh) |
-
-¹ Use the git tag matching the binary's version. (The proot repo is Termux's
-fork of [proot-me/proot](https://github.com/proot-me/proot) with Android patches.)
-
-² Use the `talloc-<version>.tar.gz` matching the binary's version.
+| Asset | Version | Licence | Source |
+|---|---|---|---|
+| `libtalloc_2.4.3_aarch64.deb` | 2.4.3 | LGPL-3.0-or-later | https://www.samba.org/ftp/talloc/ (`talloc-2.4.3.tar.gz`), built per [Termux's build.sh](https://github.com/termux/termux-packages/blob/master/packages/libtalloc/build.sh) |
+| `libandroid-shmem_0.7_aarch64.deb` | 0.7 | BSD-3-Clause | https://github.com/termux/libandroid-shmem (the tag for 0.7), built per [Termux's build.sh](https://github.com/termux/termux-packages/blob/master/packages/libandroid-shmem/build.sh) |
+| `proot_5.1.107.85_aarch64.deb` | 5.1.107.85 | GPL-2.0-or-later | https://github.com/termux/proot (tag `v5.1.107.85`). No longer used: Starboard builds proot from `proot/`. |
 
 ## Licensing
 
-The full license text ships with each package's source (linked above). This repo adds no original code beyond this README.
+Each component keeps its own licence, given above and in its directory's
+README. The scripts and READMEs in this repo are GPL-3.0-or-later, like
+Starboard.

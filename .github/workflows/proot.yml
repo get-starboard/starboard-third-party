@@ -1,0 +1,80 @@
+name: proot
+
+# Builds twice and checks the binaries match. A proot-*-sb* tag also publishes
+# them, with the source, on that tag's release.
+on:
+  push:
+    branches: ['**']
+    paths: ['proot/**', '.github/workflows/proot.yml']
+    tags: ['proot-*-sb*']
+  pull_request:
+    paths: ['proot/**', '.github/workflows/proot.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        run: [a, b]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install the NDK and patchelf
+        run: |
+          sudo apt-get install -y -qq patchelf
+          . proot/deps.env
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_REVISION" > /dev/null
+          echo "NDK=$ANDROID_HOME/ndk/$NDK_REVISION" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: proot/build.sh out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: proot-${{ matrix.run }}
+          path: out/
+
+  compare:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Both builds are identical
+        run: diff proot-a/SHA256SUMS proot-b/SHA256SUMS && cat proot-a/SHA256SUMS
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/proot-')
+    needs: compare
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: proot-a
+          path: out
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          cd out
+          sha256sum -c SHA256SUMS
+          VERSION=${TAG#proot-}
+          {
+            echo "PRoot $VERSION, modified for [Starboard](https://get-starboard.app)."
+            echo
+            echo "termux/proot ${VERSION%-sb*} plus the patches in \`proot/patches/\` at this tag. \`proot-$VERSION-source.tar.xz\` is the patched source. Built by [this workflow run]($RUN) with \`proot/build.sh\`."
+            echo
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+          } > notes.md
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "proot $VERSION" --notes-file notes.md \
+            libproot.so libproot_loader.so "proot-$VERSION-source.tar.xz" SHA256SUMS
