@@ -23,7 +23,7 @@ apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
     build-essential meson ninja-build pkg-config python3-mako python3-yaml python3-packaging \
     bison flex glslang-tools libexpat1-dev zlib1g-dev libzstd-dev libdrm-dev libglvnd-dev \
-    libelf-dev ca-certificates curl xz-utils binutils > /dev/null
+    libelf-dev ca-certificates curl xz-utils binutils llvm-19-dev libpolly-19-dev libffi-dev libxml2-dev libz3-dev > /dev/null
 
 # A fixed source path, and a fixed hash seed for Mesa's Python code generators, keep
 # the build reproducible.
@@ -42,9 +42,9 @@ tar -C /build -xJf /build/mesa.tar.xz
 # shellcheck disable=SC2054
 MESON_OPTS=(
     "--prefix=$PREFIX" --libdir=lib --buildtype=release -Db_ndebug=true --wrap-mode=nodownload
-    -Dgallium-drivers=virgl,zink,softpipe -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl,msm
+    -Dgallium-drivers=virgl,zink,softpipe,llvmpipe -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl,msm
     -Dplatforms= -Degl=enabled -Dglx=disabled -Dglvnd=enabled -Dgbm=disabled
-    -Dgles1=enabled -Dgles2=enabled -Dllvm=disabled -Dvalgrind=disabled -Dlibunwind=disabled
+    -Dgles1=enabled -Dgles2=enabled -Dllvm=enabled -Dshared-llvm=disabled -Dvalgrind=disabled -Dlibunwind=disabled
     -Dgallium-va=disabled -Dgallium-rusticl=false -Dvideo-codecs= -Dbuild-tests=false
     -Dtools= -Dvulkan-layers=
 )
@@ -70,6 +70,8 @@ done
 mkdir -p "$T/licenses"
 cp "$SRC/docs/license.rst" "$T/licenses/mesa-license.rst"
 echo "$SB_VERSION" > "$T/VERSION"
+# The gallium drivers, for the launcher to tell a build with llvmpipe.
+echo "virgl zink softpipe llvmpipe" > "$T/DRIVERS"
 {
     echo "Mesa $MESA_VERSION, built for Starboard as $SB_VERSION"
     echo "source: $MESA_URL"
