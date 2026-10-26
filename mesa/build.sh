@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Builds Mesa for /opt/sb-mesa: virgl and Zink, and Turnip on KGSL. Runs as root inside
-# BUILD_IMAGE (arm64). Writes the install tarball and SHA256SUMS to <out-dir>.
+# Builds Mesa for /opt/sb-mesa: virgl, Zink, llvmpipe, and Turnip on KGSL. Runs as root
+# inside BUILD_IMAGE (arm64). Writes the install tarball and SHA256SUMS to <out-dir>.
 # Usage: mesa/build.sh <out-dir>
 set -euo pipefail
 [[ $# -eq 1 ]] || { echo "usage: $0 <out-dir>" >&2; exit 1; }
@@ -23,7 +23,8 @@ apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
     build-essential meson ninja-build pkg-config python3-mako python3-yaml python3-packaging \
     bison flex glslang-tools libexpat1-dev zlib1g-dev libzstd-dev libdrm-dev libglvnd-dev \
-    libelf-dev ca-certificates curl xz-utils binutils > /dev/null
+    libelf-dev ca-certificates curl xz-utils binutils \
+    llvm-19-dev libpolly-19-dev libffi-dev libxml2-dev libz3-dev > /dev/null
 
 # A fixed source path, and a fixed hash seed for Mesa's Python code generators, keep
 # the build reproducible.
@@ -36,15 +37,17 @@ curl -fsSL --retry 3 -o /build/mesa.tar.xz "$MESA_URL"
 echo "$MESA_SHA256  /build/mesa.tar.xz" | sha256sum -c --quiet -
 tar -C /build -xJf /build/mesa.tar.xz
 
-# softpipe gives SDL's offscreen driver the EGL device it looks for. msm keeps libdrm,
-# which Mesa drops for Turnip on KGSL alone, though virgl's DRM winsys needs it. The
-# commas are meson's list syntax.
+# softpipe gives SDL's offscreen driver the EGL device it looks for. llvmpipe is the CPU
+# path; LLVM is linked into libgallium so it can't clash with the rootfs's own LLVM.
+GALLIUM_DRIVERS=virgl,zink,softpipe,llvmpipe
+# msm keeps libdrm, which Mesa drops for Turnip on KGSL alone, though virgl's DRM winsys
+# needs it. The commas are meson's list syntax.
 # shellcheck disable=SC2054
 MESON_OPTS=(
     "--prefix=$PREFIX" --libdir=lib --buildtype=release -Db_ndebug=true --wrap-mode=nodownload
-    -Dgallium-drivers=virgl,zink,softpipe -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl,msm
+    "-Dgallium-drivers=$GALLIUM_DRIVERS" -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl,msm
     -Dplatforms= -Degl=enabled -Dglx=disabled -Dglvnd=enabled -Dgbm=disabled
-    -Dgles1=enabled -Dgles2=enabled -Dllvm=disabled -Dvalgrind=disabled -Dlibunwind=disabled
+    -Dgles1=enabled -Dgles2=enabled -Dllvm=enabled -Dshared-llvm=disabled -Dvalgrind=disabled -Dlibunwind=disabled
     -Dgallium-va=disabled -Dgallium-rusticl=false -Dvideo-codecs= -Dbuild-tests=false
     -Dtools= -Dvulkan-layers=
 )
@@ -65,11 +68,15 @@ for f in "$T"/lib/*.so*; do
     v=$(objdump -T "$f" | { grep -o 'GLIBC_[0-9.]*' || true; } | sed 's/GLIBC_//' | sort -V | tail -1)
     [[ -z "$v" || "$(printf '%s\n%s\n' "$v" "$GLIBC_LIMIT" | sort -V | tail -1)" == "$GLIBC_LIMIT" ]] \
         || { echo "$f needs GLIBC_$v, above $GLIBC_LIMIT" >&2; exit 1; }
+    if readelf -d "$f" | grep -q 'NEEDED.*libLLVM'; then echo "$f links LLVM dynamically" >&2; exit 1; fi
 done
 
 mkdir -p "$T/licenses"
 cp "$SRC/docs/license.rst" "$T/licenses/mesa-license.rst"
+cp /usr/share/doc/llvm-19-dev/copyright "$T/licenses/llvm-copyright"
 echo "$SB_VERSION" > "$T/VERSION"
+# The launcher reads this to tell whether the CPU path (llvmpipe) is in this build.
+echo "${GALLIUM_DRIVERS//,/ }" > "$T/DRIVERS"
 {
     echo "Mesa $MESA_VERSION, built for Starboard as $SB_VERSION"
     echo "source: $MESA_URL"
