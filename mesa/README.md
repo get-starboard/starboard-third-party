@@ -34,9 +34,8 @@ an x86 machine Docker emulates arm64, which is slow. CI uses an arm64 runner.
 
 ## Releases
 
-Tags are `mesa-<mesa version>-sb<n>`. The `mesa` workflow builds every change
-twice and checks the tarballs match. A tag also publishes the tarball and
-`SHA256SUMS` on its release.
+Tags are `mesa-<mesa version>-sb<n>`. The `mesa` workflow builds every change.
+A tag also publishes the tarball and `SHA256SUMS` on its release.
 
 ## Moving to a new Mesa
 

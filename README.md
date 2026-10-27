@@ -8,13 +8,13 @@ pinned SHA-256.
 | Directory | What | Built or mirrored | Release tags |
 |---|---|---|---|
 | [`proot/`](proot/) | proot and its loader, with Starboard's patches | Built here | `proot-<version>-sb<n>` |
-| [`mesa/`](mesa/) | Mesa for the GPU paths: virgl, Zink and Turnip | Built here | `mesa-<version>-sb<n>` |
+| [`mesa/`](mesa/) | Mesa for every video path: virgl, Zink, llvmpipe and Turnip | Built here | `mesa-<version>-sb<n>` |
 | none | Termux's libtalloc and libandroid-shmem `.deb`s, which proot needs | Mirrored | `proot-5.1.107.85` |
 
 Tags carry the upstream version, then `-sb<n>`, which counts Starboard's builds
-of that version. A tag on a directory's workflow builds it twice, checks the two
-builds match, and publishes the binaries, `SHA256SUMS` and the source on that
-tag's release.
+of that version. A tag on a directory's workflow builds it and publishes the
+binaries, `SHA256SUMS` and the source on that tag's release. proot's builds it
+twice and checks the two builds match first.
 
 ## The mirrored packages
 
