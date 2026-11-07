@@ -1,0 +1,64 @@
+From b16ebad2936e7d47af52d396b279dc236556943e Mon Sep 17 00:00:00 2001
+From: David Stephens <dave@force9.org>
+Date: Sat, 7 Nov 2026 10:45:08 +0000
+Subject: [PATCH] Stub the Steam lobby, networking and DLC calls
+
+A game that references a Steam function the loader doesn't stub aborts while loading. Names from JeodC/gmloader-next.
+---
+ gmloader/stubs/stubs_steam.cpp | 36 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 35 insertions(+), 1 deletion(-)
+
+diff --git a/gmloader/stubs/stubs_steam.cpp b/gmloader/stubs/stubs_steam.cpp
+index c51789c..9da4e0b 100644
+--- a/gmloader/stubs/stubs_steam.cpp
++++ b/gmloader/stubs/stubs_steam.cpp
+@@ -151,6 +151,12 @@ static const char* steam_stubs[] = {
+     "steam_set_rich_presence",
+     "steam_user_set_played_with",
+ 
++    // Apps / DLC
++    // libyoyo's Android version returns -1 without Steam, which is truthy in GML and
++    // could unlock DLC baked into the game's data. 0 says it isn't owned.
++    "steam_user_owns_dlc",
++    "steam_user_installed_dlc",
++
+     // Utils
+     "steam_dismiss_floating_gamepad_text_input",
+     "steam_get_entered_gamepad_text_input",
+@@ -161,7 +167,35 @@ static const char* steam_stubs[] = {
+     "steam_utils_get_steam_ui_language",
+     "steam_utils_is_steam_in_big_picture_mode",
+     "steam_utils_is_steam_running_on_steam_deck",
+-    "steam_utils_set_game_launcher_mode"
++    "steam_utils_set_game_launcher_mode",
++
++    // Lobby / Matchmaking
++    "steam_lobby_activate_invite_overlay",
++    "steam_lobby_create",
++    "steam_lobby_get_chat_message_data",
++    "steam_lobby_get_chat_message_text",
++    "steam_lobby_get_lobby_id",
++    "steam_lobby_get_member_count",
++    "steam_lobby_get_member_id",
++    "steam_lobby_get_owner_id",
++    "steam_lobby_is_owner",
++    "steam_lobby_join_id",
++    "steam_lobby_leave",
++    "steam_lobby_list_add_string_filter",
++    "steam_lobby_list_get_count",
++    "steam_lobby_list_get_data",
++    "steam_lobby_list_get_lobby_id",
++    "steam_lobby_list_join",
++    "steam_lobby_list_request",
++    "steam_lobby_send_chat_message_buffer",
++    "steam_lobby_set_data",
++    "steam_lobby_set_owner_id",
++
++    // Steam Networking (P2P packets)
++    "steam_net_packet_get_data",
++    "steam_net_packet_get_sender_id",
++    "steam_net_packet_receive",
++    "steam_net_packet_send"
+ };
+ 
+ ABI_ATTR void steam_stub(RValue *ret, void *self, void *other, int argc, RValue *args)
