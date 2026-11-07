@@ -27,6 +27,17 @@ jobs:
           mkdir -p out
           docker run --rm -v "$PWD:/repo:ro" -v "$PWD/out:/out" -e SB_VERSION="$SB_VERSION" \
             "$BUILD_IMAGE" bash /repo/gmloadernext/build.sh /out
+          echo "SB_VERSION=$SB_VERSION" >> "$GITHUB_ENV"
+
+      # Proves the published source rebuilds the published binary.
+      - name: Rebuild from the source tarball
+        run: |
+          . gmloadernext/deps.env
+          mkdir src again
+          tar -C src -xJf "out/gmloadernext-$SB_VERSION-source.tar.xz"
+          docker run --rm -v "$PWD/src/gmloadernext-$SB_VERSION:/src:ro" -v "$PWD/again:/out" \
+            -e GMLOADER_SRC=/src -e SB_VERSION="$SB_VERSION" "$BUILD_IMAGE" bash /src/starboard/build.sh /out
+          diff out/SHA256SUMS again/SHA256SUMS
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -55,9 +66,13 @@ jobs:
           sha256sum -c SHA256SUMS
           VERSION=${TAG#gmloadernext-}
           {
-            echo "gmloader-next with more Steam stubs, built for [Starboard](https://github.com/get-starboard/starboard)."
+            echo "gmloader-next with more Steam stubs, built for [Starboard](https://get-starboard.app)."
             echo
             echo "Built by [this workflow run]($RUN) with \`gmloadernext/build.sh\` at this tag. The patched source is attached."
+            echo
+            echo '```'
+            tar -xJOf "gmloadernext-$VERSION-aarch64.tar.xz" ./SOURCE.txt
+            echo '```'
             echo
             echo '```'
             cat SHA256SUMS

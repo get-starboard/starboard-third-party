@@ -1,6 +1,6 @@
-From b16ebad2936e7d47af52d396b279dc236556943e Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: David Stephens <dave@force9.org>
-Date: Sat, 7 Nov 2026 10:45:08 +0000
+Date: Sat, 7 Nov 2026 11:06:44 +0000
 Subject: [PATCH] Stub the Steam lobby, networking and DLC calls
 
 A game that references a Steam function the loader doesn't stub aborts while loading. Names from JeodC/gmloader-next.
@@ -9,16 +9,20 @@ A game that references a Steam function the loader doesn't stub aborts while loa
  1 file changed, 35 insertions(+), 1 deletion(-)
 
 diff --git a/gmloader/stubs/stubs_steam.cpp b/gmloader/stubs/stubs_steam.cpp
-index c51789c..9da4e0b 100644
+index c51789c..772513c 100644
 --- a/gmloader/stubs/stubs_steam.cpp
 +++ b/gmloader/stubs/stubs_steam.cpp
-@@ -151,6 +151,12 @@ static const char* steam_stubs[] = {
+@@ -1,3 +1,4 @@
++// Modified for Starboard, November 2026: added the DLC, lobby and networking stubs.
+ #include "platform.h"
+ #include "so_util.h"
+ #include "libyoyo.h"
+@@ -151,6 +152,11 @@ static const char* steam_stubs[] = {
      "steam_set_rich_presence",
      "steam_user_set_played_with",
  
 +    // Apps / DLC
-+    // libyoyo's Android version returns -1 without Steam, which is truthy in GML and
-+    // could unlock DLC baked into the game's data. 0 says it isn't owned.
++    // 0 means not owned, as the loader can't ask Steam.
 +    "steam_user_owns_dlc",
 +    "steam_user_installed_dlc",
 +
