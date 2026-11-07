@@ -9,6 +9,7 @@ pinned SHA-256.
 |---|---|---|---|
 | [`proot/`](proot/) | proot and its loader, with Starboard's patches | Built here | `proot-<version>-sb<n>` |
 | [`mesa/`](mesa/) | Mesa for every video path: virgl, Zink, llvmpipe and Turnip | Built here | `mesa-<version>-sb<n>` |
+| [`gmloadernext/`](gmloadernext/) | gmloader-next, which runs GameMaker ports, with Starboard's patch | Built here | `gmloadernext-<version>-sb<n>` |
 | none | Termux's libtalloc and libandroid-shmem `.deb`s, which proot needs | Mirrored | `proot-5.1.107.85` |
 
 Tags carry the upstream version, then `-sb<n>`, which counts Starboard's builds
@@ -34,3 +35,5 @@ Each component keeps its own licence, given above and in its directory's
 README. This repo's own files (the build scripts, patches, workflows and
 READMEs) are GPL-2.0-or-later: see `LICENSE`. The patches modify proot, which is
 GPL-2.0-or-later, and the build scripts ship inside proot's source tarball.
+The exception is `gmloadernext/patches/`, which is GPL-2.0-only like the loader it
+modifies.

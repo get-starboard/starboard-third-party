@@ -1,0 +1,82 @@
+name: gmloadernext
+
+# Cross-compiles in BUILD_IMAGE. A gmloadernext-*-sb* tag also publishes the result on that
+# tag's release.
+on:
+  push:
+    branches: ['**']
+    paths: ['gmloadernext/**', '.github/workflows/gmloadernext.yml']
+    tags: ['gmloadernext-*-sb*']
+  pull_request:
+    paths: ['gmloadernext/**', '.github/workflows/gmloadernext.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Build
+        run: |
+          . gmloadernext/deps.env
+          SB_VERSION=$GMLOADER_VERSION-sb-dev
+          if [[ "$GITHUB_REF" == refs/tags/gmloadernext-* ]]; then SB_VERSION=${GITHUB_REF_NAME#gmloadernext-}; fi
+          mkdir -p out
+          docker run --rm -v "$PWD:/repo:ro" -v "$PWD/out:/out" -e SB_VERSION="$SB_VERSION" \
+            "$BUILD_IMAGE" bash /repo/gmloadernext/build.sh /out
+          echo "SB_VERSION=$SB_VERSION" >> "$GITHUB_ENV"
+
+      # Proves the published source rebuilds the published binary.
+      - name: Rebuild from the source tarball
+        run: |
+          . gmloadernext/deps.env
+          mkdir src again
+          tar -C src -xJf "out/gmloadernext-$SB_VERSION-source.tar.xz"
+          docker run --rm -v "$PWD/src/gmloadernext-$SB_VERSION:/src:ro" -v "$PWD/again:/out" \
+            -e GMLOADER_SRC=/src -e SB_VERSION="$SB_VERSION" "$BUILD_IMAGE" bash /src/starboard/build.sh /out
+          diff out/SHA256SUMS again/SHA256SUMS
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: gmloadernext
+          path: out/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/gmloadernext-')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: gmloadernext
+          path: out
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          cd out
+          sha256sum -c SHA256SUMS
+          VERSION=${TAG#gmloadernext-}
+          {
+            echo "gmloader-next with more Steam stubs, built for [Starboard](https://get-starboard.app)."
+            echo
+            echo "Built by [this workflow run]($RUN) with \`gmloadernext/build.sh\` at this tag. The patched source is attached."
+            echo
+            echo '```'
+            tar -xJOf "gmloadernext-$VERSION-aarch64.tar.xz" ./SOURCE.txt
+            echo '```'
+            echo
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+          } > notes.md
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "gmloadernext $VERSION" --notes-file notes.md \
+            "gmloadernext-$VERSION-aarch64.tar.xz" "gmloadernext-$VERSION-source.tar.xz" SHA256SUMS
